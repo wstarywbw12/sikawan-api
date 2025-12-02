@@ -31,11 +31,15 @@ class LoginController extends Controller
                 'username' => $user->username,
                 'email'    => $user->email,
                 'pegawai'  => [
-                    'nama_lengkap' => trim($user->pegawai->GelarDepan.' '.$user->pegawai->nama.' '.$user->pegawai->GelarBelakang),
+                    'pegawai_id'  => $user->pegawai_id,
+                    'gelar_depan' => $user->pegawai->GelarDepan,
+                    'nama' => $user->pegawai->nama,
+                    'gelar_belakang' => $user->pegawai->GelarBelakang,
                     'nip'         => $user->pegawai->nip,
                     'nik'         => $user->pegawai->nik,
                     'whatsapp'    => $user->pegawai->whatsapp,
                     'unit' => [
+                        'unit_id'        => $user->pegawai->unit_id,
                         'nama_unit' => $user->pegawai->unit->unit,
                         'atasan'    => $user->pegawai->unit->atasanPegawai
                             ? trim($user->pegawai->unit->atasanPegawai->GelarDepan.' '.$user->pegawai->unit->atasanPegawai->nama.' '.$user->pegawai->unit->atasanPegawai->GelarBelakang)
