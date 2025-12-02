@@ -39,7 +39,7 @@ class AuthService
         // Cek apakah input HANYA angka dan simbol telepon
         $isPhoneInput = preg_match('/^[0-9+()\-\s]+$/', $input);
 
-        $user = User::with('pegawai.unit.atasanPegawai')
+        $user = User::with('pegawai.unit.atasanPegawai.jabatan')
             ->where(function ($q) use ($input, $norm, $isPhoneInput) {
 
                 // 1. EMAIL
