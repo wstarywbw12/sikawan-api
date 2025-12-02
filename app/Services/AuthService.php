@@ -7,58 +7,77 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthService
 {
-    /**
-     * Normalisasi nomor telepon Indonesia
-     */
-    private function normalizePhone($phone)
+    private function normalizeAllFormats($phone)
     {
-        // Hapus semua karakter non digit
-        $phone = preg_replace('/[^0-9]/', '', $phone);
+        // Hapus non-digit
+        $digits = preg_replace('/\D/', '', $phone);
 
-        // Jika mulai dengan "62" ubah ke "0"
-        if (substr($phone, 0, 2) === '62') {
-            $phone = '0' . substr($phone, 2);
+        // Jika nomor diawali 62 → ubah ke 0xxxxxxxxxx
+        if (substr($digits, 0, 2) === '62') {
+            $local = '0'.substr($digits, 2);
+        }
+        // Jika sudah 0xxxxxxxxxx
+        elseif (substr($digits, 0, 1) === '0') {
+            $local = $digits;
+        }
+        // Jika tidak sesuai (misal tidak mulai 0 dan tidak 62 → paksa jadi lokal)
+        else {
+            $local = '0'.$digits;
         }
 
-        return $phone;
+        return [
+            'local' => $local,
+            '62' => '62'.substr($local, 1),
+            'plus' => '+62'.substr($local, 1),
+        ];
     }
 
-    /**
-     * Attempt login
-     */
     public function attemptLogin($input, $password)
     {
-        $normalized   = $this->normalizePhone($input);
-        $format62     = '62' . substr($normalized, 1);
-        $formatPlus62 = '+62' . substr($normalized, 1);
+        $norm = $this->normalizeAllFormats($input);
+
+        // Cek apakah input HANYA angka dan simbol telepon
+        $isPhoneInput = preg_match('/^[0-9+()\-\s]+$/', $input);
 
         $user = User::with('pegawai.unit.atasanPegawai')
-            ->where(function ($q) use ($input, $normalized, $format62, $formatPlus62) {
+            ->where(function ($q) use ($input, $norm, $isPhoneInput) {
 
-                // 1. login via email
+                // 1. EMAIL
                 $q->where('email', $input)
 
-                // 2. login via username (biasa)
-                  ->orWhere('username', $input)
+                // 2. USERNAME BIASA (admin, superadmin, timsim)
+                    ->orWhere('username', $input);
 
-                // 3. login via nomor whatsapp (dalam berbagai format)
-                  ->orWhere('username', $normalized)
-                  ->orWhere('username', $format62)
-                  ->orWhere('username', $formatPlus62)
+                // 3. JIKA INPUT DIDUGA NOMOR TELP, cek semua format nomor
+                if ($isPhoneInput) {
 
-                // 4. login via NIP (relasi pegawai)
-                  ->orWhereHas('pegawai', function ($p) use ($input) {
-                      $p->where('nip', $input);
-                  })
+                    $local = preg_replace('/\D/', '', $norm['local']);
+                    $f62 = preg_replace('/\D/', '', $norm['62']);
+                    $fPlus = preg_replace('/\D/', '', $norm['plus']);
 
-                // 5. login via NIK (relasi pegawai)
-                  ->orWhereHas('pegawai', function ($p) use ($input) {
-                      $p->where('nik', $input);
-                  });
+                    // username yang disimpan sebagai nomor
+                    $q->orWhereRaw("
+                    REGEXP_REPLACE(username, '[^0-9]', '') IN (?, ?, ?)
+                ", [$local, $f62, $fPlus]);
+
+                    // pegawai->whatsapp
+                    $q->orWhereHas('pegawai', function ($p) use ($local, $f62, $fPlus) {
+                        $p->whereRaw("
+                        REGEXP_REPLACE(whatsapp, '[^0-9]', '') IN (?, ?, ?)
+                    ", [$local, $f62, $fPlus]);
+                    });
+                }
+
+                // 4. NIP / NIK (tetap tanpa normalisasi)
+                $q->orWhereHas('pegawai', function ($p) use ($input) {
+                    $p->where('nip', $input)
+                        ->orWhere('nik', $input);
+                });
             })
             ->first();
 
-        if (!$user || !Hash::check($password, $user->password)) {
+        // PASSWORD CHECK
+        if (! $user || ! Hash::check($password, $user->password)) {
             return null;
         }
 
