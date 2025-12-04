@@ -34,10 +34,10 @@ class LoginController extends Controller
             ],
             'response' => [
                 'data' => [
-                    'jabatan' => [
-                        'id'   => (string) $user->pegawai->jabatan->id ?? null,
-                        'nama' => $user->pegawai->jabatan->jabatan ?? null
-                    ],
+                    // 'jabatan' => [
+                    //     'id'   => (string) $user->pegawai->jabatan->id ?? null,
+                    //     'nama' => $user->pegawai->jabatan->jabatan ?? null
+                    // ],
                     'karyawan' => [
                         'id'       => (string) $user->pegawai_id,
                         'nama'     => trim(
