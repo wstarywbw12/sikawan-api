@@ -46,6 +46,8 @@ class LoginController extends Controller
                             ($user->pegawai->GelarBelakang ? '' . $user->pegawai->GelarBelakang : '')
                         ),
                         'nip'      => $user->pegawai->nip,
+                        'whatsapp'      => $user->pegawai->whatsapp,
+                        'username'      => $user->username,
                         'password' => $user->password // hashed password
                     ],
                     'ruang' => [
