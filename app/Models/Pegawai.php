@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Pegawai extends Model
 {
@@ -23,5 +24,10 @@ class Pegawai extends Model
     public function jabatan()
     {
         return $this->belongsTo(Jabatan::class);
+    }
+
+      public function pangkat(): BelongsTo
+    {
+        return $this->belongsTo(Pangkat::class, 'pangkat_id', 'id');
     }
 }
