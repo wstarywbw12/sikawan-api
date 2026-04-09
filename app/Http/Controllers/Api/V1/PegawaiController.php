@@ -53,6 +53,7 @@ class PegawaiController extends Controller
                         ($pegawai->GelarBelakang ? ', ' . $pegawai->GelarBelakang : '')
                     ),
                     'nama' => $pegawai->nama,
+                    'status' => $pegawai->statusx,
                     'gelar_depan' => $pegawai->GelarDepan,
                     'gelar_belakang' => $pegawai->GelarBelakang,
                     'unit' => $pegawai->unit ? [
@@ -121,6 +122,7 @@ class PegawaiController extends Controller
                 'nama' => $pegawai->nama,
                 'gelar_depan' => $pegawai->GelarDepan,
                 'gelar_belakang' => $pegawai->GelarBelakang,
+                'status' => $pegawai->statusx,
                 'unit' => $pegawai->unit ? [
                     'id' => $pegawai->unit->id,
                     'unit' => $pegawai->unit->unit
