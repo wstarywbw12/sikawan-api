@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\Pegawai;
+
+class SikawanController extends Controller
+{
+    public function index()
+    {
+        // Base query pegawai aktif
+        $base = Pegawai::where('kondisi', 'Aktif');
+
+        $data = [
+            'total_pegawai' => (clone $base)->count(),
+            'total_pns' => (clone $base)->where('statusx', 'PNS')->count(),
+            'total_p3k' => (clone $base)->where('statusx', 'P3K')->count(),
+            'total_p3k_pw' => (clone $base)->where('statusx', 'P3K Paruh Waktu')->count(),
+            'total_cpns' => (clone $base)->where('statusx', 'CPNS')->count(),
+            'total_kontrak' => (clone $base)->where('statusx', 'KONTRAK')->count(),
+            'total_tetap' => (clone $base)->where('statusx', 'TETAP')->count(),
+            'total_orientasi' => (clone $base)->where('statusx', 'Orientasi')->count(),
+
+            'total_dokter_umum' => (clone $base)->whereHas('jabatan', function ($q) {
+                $q->where('jabatan', 'like', '%dokter umum%');
+            })->count(),
+
+            'total_dokter_spesialis' => (clone $base)->whereHas('jabatan', function ($q) {
+                $q->where('jabatan', 'like', '%spesialis%');
+            })->count(),
+
+            'total_perawat' => (clone $base)->whereHas('jabatan', function ($q) {
+                $q->where('jabatan', 'like', '%perawat%');
+            })->count(),
+
+            'total_bidan' => (clone $base)->whereHas('jabatan', function ($q) {
+                $q->where('jabatan', 'like', '%bidan%');
+            })->count(),
+
+            'total_medis' => (clone $base)->whereHas('jabatan', function ($q) {
+                $q->where(function ($query) {
+                    $query->where('jabatan', 'like', '%dokter%')
+                        ->orWhere('jabatan', 'like', '%perawat%')
+                        ->orWhere('jabatan', 'like', '%bidan%');
+                });
+            })->count(),
+
+            'total_non_medis' => (clone $base)->whereHas('jabatan', function ($q) {
+                $q->where(function ($query) {
+                    $query->where('jabatan', 'not like', '%dokter%')
+                        ->where('jabatan', 'not like', '%perawat%')
+                        ->where('jabatan', 'not like', '%bidan%');
+                });
+            })->count(),
+
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data statistik pegawai berhasil diambil',
+            'data' => $data,
+        ], 200);
+    }
+}

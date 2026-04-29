@@ -13,7 +13,8 @@ class Pegawai extends Model
         'unit_id',
         'nip',
         'nik',
-        'WhatsApp'
+        'WhatsApp',
+        'kondisi'
     ];
 
     public function unit()
