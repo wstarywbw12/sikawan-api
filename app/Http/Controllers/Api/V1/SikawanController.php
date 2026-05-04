@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pegawai;
+use App\Models\Jadwal;
+use Carbon\Carbon;
 
 class SikawanController extends Controller
 {
@@ -12,7 +14,38 @@ class SikawanController extends Controller
         // Base query pegawai aktif
         $base = Pegawai::where('kondisi', 'Aktif');
 
+        // ======================
+        // SHIFT HARI INI
+        // ======================
+        $today = Carbon::today();
+
+        // Pagi (termasuk "Pagi Siang")
+        $total_shift_pagi = Jadwal::whereDate('tanggal', $today)
+            ->whereHas('shift', function ($q) {
+                $q->where('shift', 'like', '%pagi%');
+            })
+            ->count();
+
+        // Siang (tidak termasuk "Pagi Siang")
+        $total_shift_siang = Jadwal::whereDate('tanggal', $today)
+            ->whereHas('shift', function ($q) {
+                $q->where('shift', 'like', '%siang%')
+                  ->where('shift', 'not like', '%pagi%');
+            })
+            ->count();
+
+        // Malam
+        $total_shift_malam = Jadwal::whereDate('tanggal', $today)
+            ->whereHas('shift', function ($q) {
+                $q->where('shift', 'like', '%malam%');
+            })
+            ->count();
+
+        // ======================
+        // DATA STATISTIK
+        // ======================
         $data = [
+            // Pegawai
             'total_pegawai' => (clone $base)->count(),
             'total_pns' => (clone $base)->where('statusx', 'PNS')->count(),
             'total_p3k' => (clone $base)->where('statusx', 'P3K')->count(),
@@ -22,6 +55,7 @@ class SikawanController extends Controller
             'total_tetap' => (clone $base)->where('statusx', 'TETAP')->count(),
             'total_orientasi' => (clone $base)->where('statusx', 'Orientasi')->count(),
 
+            // Jabatan
             'total_dokter_umum' => (clone $base)->whereHas('jabatan', function ($q) {
                 $q->where('jabatan', 'like', '%dokter umum%');
             })->count(),
@@ -54,11 +88,15 @@ class SikawanController extends Controller
                 });
             })->count(),
 
+            // Shift Hari Ini
+            'total_shift_pagi' => $total_shift_pagi,
+            'total_shift_siang' => $total_shift_siang,
+            'total_shift_malam' => $total_shift_malam,
         ];
 
         return response()->json([
             'success' => true,
-            'message' => 'Data statistik pegawai berhasil diambil',
+            'message' => 'Data statistik pegawai & shift hari ini berhasil diambil',
             'data' => $data,
         ], 200);
     }
